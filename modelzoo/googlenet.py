@@ -18,7 +18,6 @@ from lasagne.layers import MaxPool2DLayer as PoolLayer
 from lasagne.layers import LocalResponseNormalization2DLayer as LRNLayer
 from lasagne.nonlinearities import softmax, linear
 
-
 def build_inception_module(name, input_layer, nfilters):
     # nfilters: (pool_proj, 1x1, 3x3_reduce, 3x3, 5x5_reduce, 5x5)
     net = {}
@@ -29,24 +28,25 @@ def build_inception_module(name, input_layer, nfilters):
     net['1x1'] = ConvLayer(input_layer, nfilters[1], 1, flip_filters=False)
 
     net['3x3_reduce'] = ConvLayer(
-        input_layer, nfilters[2], 1, flip_filters=False)
+        net['1x1'], nfilters[2], 1, flip_filters=False)
     net['3x3'] = ConvLayer(
         net['3x3_reduce'], nfilters[3], 3, pad=1, flip_filters=False)
 
     net['5x5_reduce'] = ConvLayer(
-        input_layer, nfilters[4], 1, flip_filters=False)
+        net['1x1'], nfilters[4], 1, flip_filters=False)
     net['5x5'] = ConvLayer(
         net['5x5_reduce'], nfilters[5], 5, pad=2, flip_filters=False)
+
+    net['pool_fin'] = ConvLayer(net['pool_proj'], nfilters[1], 1, flip_filters=False)
 
     net['output'] = ConcatLayer([
         net['1x1'],
         net['3x3'],
         net['5x5'],
-        net['pool_proj'],
+        net['pool_fin'],
         ])
 
     return {'{}/{}'.format(name, k): v for k, v in net.items()}
-
 
 def build_model():
     net = {}
